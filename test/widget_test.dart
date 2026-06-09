@@ -3,41 +3,26 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:assignmen/main.dart';
 
 void main() {
-  testWidgets('Todo List UX Improvements Test', (WidgetTester tester) async {
+  testWidgets('Todo List Apple Design Smoke Test', (WidgetTester tester) async {
+    // Build our app and trigger a frame.
     await tester.pumpWidget(const TodoApp());
-    expect(find.text('Chưa có công việc nào'), findsOneWidget);
-    expect(find.byIcon(Icons.assignment_outlined), findsOneWidget);
-    expect(find.text('Title:'), findsOneWidget);
-    expect(find.text('Content:'), findsOneWidget);
-    expect(find.text('Date:'), findsOneWidget);
-    expect(find.text('Type:'), findsOneWidget);
-    await tester.enterText(find.byType(TextFormField).at(0), 'Test Task');
-    await tester.enterText(find.byType(TextFormField).at(1), 'Test Content');
-    await tester.tap(find.byType(TextFormField).at(2));
+
+    // Verify UI components
+    expect(find.text('TODO MANAGER'), findsOneWidget);
+    expect(find.text('No tasks yet'), findsOneWidget);
+
+    // Add a task
+    // The first TextField is Search, the second is Task input
+    await tester.enterText(find.byType(TextField).at(1), 'Buy Milk');
+    await tester.tap(find.text('Add Task'));
     await tester.pumpAndSettle();
-    expect(find.byType(DatePickerDialog), findsOneWidget);
-    await tester.tap(find.text('OK'));
-    await tester.pumpAndSettle();
-    expect(tester.widget<TextFormField>(find.byType(TextFormField).at(2)).controller!.text, isNotEmpty);
-    await tester.tap(find.byType(DropdownButtonFormField<String>));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Khó').last);
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('ADD'));
-    await tester.pumpAndSettle();
-    expect(find.text('Test Task'), findsOneWidget);
-    expect(find.text('Chưa có công việc nào'), findsNothing);
-    await tester.tap(find.byIcon(Icons.cancel));
-    await tester.pumpAndSettle();
-    expect(find.text('Xác nhận xóa'), findsOneWidget);
-    await tester.tap(find.text('Hủy'));
-    await tester.pumpAndSettle();
-    expect(find.text('Test Task'), findsOneWidget);
-    await tester.tap(find.byIcon(Icons.cancel));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Xóa'));
-    await tester.pumpAndSettle();
-    expect(find.text('Test Task'), findsNothing);
-    expect(find.text('Chưa có công việc nào'), findsOneWidget);
+
+    // Verify task added
+    expect(find.text('Buy Milk'), findsOneWidget);
+    expect(find.text('No tasks yet'), findsNothing);
+    
+    // Verify Statistics (Total: 1, Completed: 0, Remaining: 1)
+    expect(find.text('1'), findsNWidgets(2)); // Total and Remaining
+    expect(find.text('0'), findsOneWidget); // Completed
   });
 }
