@@ -7,7 +7,7 @@ class TaskItem extends StatelessWidget {
   final Task task;
   final VoidCallback onToggle;
   final VoidCallback onDelete;
-  final Function(String) onEdit;
+  final Function(String, DateTime?, TaskDifficulty) onEdit;
 
   const TaskItem({
     super.key,
@@ -16,6 +16,28 @@ class TaskItem extends StatelessWidget {
     required this.onDelete,
     required this.onEdit,
   });
+
+  Color _getDifficultyColor(TaskDifficulty difficulty) {
+    switch (difficulty) {
+      case TaskDifficulty.easy:
+        return AppleColors.easyGreen;
+      case TaskDifficulty.medium:
+        return AppleColors.mediumOrange;
+      case TaskDifficulty.hard:
+        return AppleColors.hardRed;
+    }
+  }
+
+  String _getDifficultyText(TaskDifficulty difficulty) {
+    switch (difficulty) {
+      case TaskDifficulty.easy:
+        return 'Easy';
+      case TaskDifficulty.medium:
+        return 'Medium';
+      case TaskDifficulty.hard:
+        return 'Hard';
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -49,16 +71,55 @@ class TaskItem extends StatelessWidget {
                 : null,
           ),
         ),
-        title: Text(
-          task.title,
-          style: AppleTypography.bodyStrong.copyWith(
-            decoration: task.isCompleted ? TextDecoration.lineThrough : null,
-            color: task.isCompleted ? Colors.grey : AppleColors.ink,
-          ),
+        title: Row(
+          children: [
+            Expanded(
+              child: Text(
+                task.title,
+                style: AppleTypography.bodyStrong.copyWith(
+                  decoration: task.isCompleted ? TextDecoration.lineThrough : null,
+                  color: task.isCompleted ? Colors.grey : AppleColors.ink,
+                ),
+              ),
+            ),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+              decoration: BoxDecoration(
+                color: _getDifficultyColor(task.difficulty).withValues(alpha: 0.1),
+                borderRadius: AppleRadius.pill,
+              ),
+              child: Text(
+                _getDifficultyText(task.difficulty),
+                style: AppleTypography.microLegal.copyWith(
+                  color: _getDifficultyColor(task.difficulty),
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ],
         ),
-        subtitle: Text(
-          'Created: ${DateFormat('dd/MM/yyyy HH:mm').format(task.createdAt)}',
-          style: AppleTypography.caption.copyWith(color: Colors.grey),
+        subtitle: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (task.deadline != null)
+              Padding(
+                padding: const EdgeInsets.only(top: 4),
+                child: Row(
+                  children: [
+                    const Icon(Icons.timer_outlined, size: 14, color: AppleColors.hardRed),
+                    const SizedBox(width: 4),
+                    Text(
+                      'Deadline: ${DateFormat('dd/MM/yyyy HH:mm').format(task.deadline!)}',
+                      style: AppleTypography.caption.copyWith(color: AppleColors.hardRed),
+                    ),
+                  ],
+                ),
+              ),
+            Text(
+              'Created: ${DateFormat('dd/MM/yyyy HH:mm').format(task.createdAt)}',
+              style: AppleTypography.body.copyWith(color: Colors.grey, fontSize: 12),
+            ),
+          ],
         ),
         trailing: Row(
           mainAxisSize: MainAxisSize.min,
@@ -80,33 +141,99 @@ class TaskItem extends StatelessWidget {
   }
 
   void _showEditDialog(BuildContext context) {
-    final controller = TextEditingController(text: task.title);
+    final titleController = TextEditingController(text: task.title);
+    DateTime? selectedDeadline = task.deadline;
+    TaskDifficulty selectedDifficulty = task.difficulty;
+
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Edit Task'),
-        content: TextField(
-          controller: controller,
-          autofocus: true,
-          decoration: const InputDecoration(
-            hintText: 'Task title',
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          title: const Text('Edit Task'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                TextField(
+                  controller: titleController,
+                  autofocus: true,
+                  decoration: const InputDecoration(hintText: 'Task title'),
+                ),
+                const SizedBox(height: 16),
+                const Text('Difficulty', style: AppleTypography.captionStrong),
+                Row(
+                  children: TaskDifficulty.values.map((d) {
+                    return Padding(
+                      padding: const EdgeInsets.only(right: 8.0),
+                      child: ChoiceChip(
+                        label: Text(_getDifficultyText(d)),
+                        selected: selectedDifficulty == d,
+                        onSelected: (selected) {
+                          if (selected) {
+                            setDialogState(() => selectedDifficulty = d);
+                          }
+                        },
+                      ),
+                    );
+                  }).toList(),
+                ),
+                const SizedBox(height: 16),
+                const Text('Deadline', style: AppleTypography.captionStrong),
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  title: Text(
+                    selectedDeadline == null
+                        ? 'No deadline'
+                        : DateFormat('dd/MM/yyyy HH:mm').format(selectedDeadline!),
+                    style: AppleTypography.caption,
+                  ),
+                  trailing: const Icon(Icons.calendar_today, size: 18),
+                  onTap: () async {
+                    final date = await showDatePicker(
+                      context: context,
+                      initialDate: selectedDeadline ?? DateTime.now(),
+                      firstDate: DateTime.now(),
+                      lastDate: DateTime(2100),
+                    );
+                    if (date != null) {
+                      final time = await showTimePicker(
+                        context: context,
+                        initialTime: TimeOfDay.fromDateTime(selectedDeadline ?? DateTime.now()),
+                      );
+                      if (time != null) {
+                        setDialogState(() {
+                          selectedDeadline = DateTime(
+                            date.year,
+                            date.month,
+                            date.day,
+                            time.hour,
+                            time.minute,
+                          );
+                        });
+                      }
+                    }
+                  },
+                ),
+              ],
+            ),
           ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () {
+                if (titleController.text.trim().isNotEmpty) {
+                  onEdit(titleController.text.trim(), selectedDeadline, selectedDifficulty);
+                  Navigator.pop(context);
+                }
+              },
+              child: const Text('Save'),
+            ),
+          ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () {
-              if (controller.text.trim().isNotEmpty) {
-                onEdit(controller.text.trim());
-                Navigator.pop(context);
-              }
-            },
-            child: const Text('Save'),
-          ),
-        ],
       ),
     );
   }

@@ -11,6 +11,10 @@ class AppleColors {
   static const Color dividerSoft = Color(0xFFF0F0F0);
   static const Color hairline = Color(0xFFE0E0E0);
   static const Color onPrimary = Color(0xFFFFFFFF);
+
+  static const Color easyGreen = Color(0xFF34C759);
+  static const Color mediumOrange = Color(0xFFFF9500);
+  static const Color hardRed = Color(0xFFFF3B30);
 }
 
 class AppleSpacing {
@@ -87,5 +91,13 @@ class AppleTypography {
     fontWeight: FontWeight.w600,
     letterSpacing: -0.224,
     height: 1.29,
+  );
+
+  static const TextStyle microLegal = TextStyle(
+    color: AppleColors.ink,
+    fontSize: 10,
+    fontWeight: FontWeight.w400,
+    letterSpacing: -0.08,
+    height: 1.3,
   );
 }

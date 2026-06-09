@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import '../models/task.dart';
 import '../utils/constants.dart';
 import '../widgets/task_item.dart';
@@ -18,13 +19,22 @@ class _HomeScreenState extends State<HomeScreen> {
   final TextEditingController _searchController = TextEditingController();
   String _filter = 'All';
   String _searchQuery = '';
+  DateTime? _selectedDeadline;
+  TaskDifficulty _selectedDifficulty = TaskDifficulty.easy;
 
   void _addTask() {
     final title = _taskController.text.trim();
     if (title.isNotEmpty) {
       setState(() {
-        _tasks.insert(0, Task(title: title, createdAt: DateTime.now()));
+        _tasks.insert(0, Task(
+          title: title,
+          createdAt: DateTime.now(),
+          deadline: _selectedDeadline,
+          difficulty: _selectedDifficulty,
+        ));
         _taskController.clear();
+        _selectedDeadline = null;
+        _selectedDifficulty = TaskDifficulty.easy;
       });
     }
   }
@@ -60,9 +70,11 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  void _editTask(Task task, String newTitle) {
+  void _editTask(Task task, String newTitle, DateTime? newDeadline, TaskDifficulty newDifficulty) {
     setState(() {
       task.title = newTitle;
+      task.deadline = newDeadline;
+      task.difficulty = newDifficulty;
     });
   }
 
@@ -168,6 +180,79 @@ class _HomeScreenState extends State<HomeScreen> {
                           style: AppleTypography.body,
                         ),
                         const SizedBox(height: AppleSpacing.md),
+                        Row(
+                          children: [
+                            const Text('Difficulty:', style: AppleTypography.captionStrong),
+                            const SizedBox(width: AppleSpacing.sm),
+                            ...TaskDifficulty.values.map((d) => Padding(
+                              padding: const EdgeInsets.only(right: AppleSpacing.xs),
+                              child: ChoiceChip(
+                                label: Text(d.name[0].toUpperCase() + d.name.substring(1)),
+                                selected: _selectedDifficulty == d,
+                                onSelected: (selected) {
+                                  if (selected) {
+                                    setState(() => _selectedDifficulty = d);
+                                  }
+                                },
+                              ),
+                            )),
+                          ],
+                        ),
+                        const SizedBox(height: AppleSpacing.sm),
+                        GestureDetector(
+                          onTap: () async {
+                            final date = await showDatePicker(
+                              context: context,
+                              initialDate: DateTime.now(),
+                              firstDate: DateTime.now(),
+                              lastDate: DateTime(2100),
+                            );
+                            if (date != null) {
+                              final time = await showTimePicker(
+                                context: context,
+                                initialTime: TimeOfDay.now(),
+                              );
+                              if (time != null) {
+                                setState(() {
+                                  _selectedDeadline = DateTime(
+                                    date.year, date.month, date.day,
+                                    time.hour, time.minute,
+                                  );
+                                });
+                              }
+                            }
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: AppleSpacing.md,
+                              vertical: AppleSpacing.sm,
+                            ),
+                            decoration: BoxDecoration(
+                              color: AppleColors.canvasParchment,
+                              borderRadius: BorderRadius.circular(AppleRadius.md),
+                            ),
+                            child: Row(
+                              children: [
+                                const Icon(Icons.calendar_today, size: 18, color: AppleColors.primary),
+                                const SizedBox(width: AppleSpacing.sm),
+                                Text(
+                                  _selectedDeadline == null
+                                      ? 'Set Deadline (Optional)'
+                                      : 'Deadline: ${DateFormat('dd/MM/yyyy HH:mm').format(_selectedDeadline!)}',
+                                  style: AppleTypography.caption.copyWith(
+                                    color: _selectedDeadline == null ? Colors.grey : AppleColors.primary,
+                                  ),
+                                ),
+                                if (_selectedDeadline != null)
+                                  IconButton(
+                                    icon: const Icon(Icons.close, size: 16),
+                                    onPressed: () => setState(() => _selectedDeadline = null),
+                                  ),
+                              ],
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: AppleSpacing.md),
                         SizedBox(
                           width: double.infinity,
                           child: ElevatedButton(
@@ -225,7 +310,8 @@ class _HomeScreenState extends State<HomeScreen> {
                             task: task,
                             onToggle: () => _toggleTask(task),
                             onDelete: () => _deleteTask(_tasks.indexOf(task)),
-                            onEdit: (newTitle) => _editTask(task, newTitle),
+                            onEdit: (newTitle, newDeadline, newDifficulty) => 
+                                _editTask(task, newTitle, newDeadline, newDifficulty),
                           );
                         },
                         childCount: _filteredTasks.length,
