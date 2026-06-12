@@ -280,12 +280,12 @@ class _HomeScreenState extends State<HomeScreen> {
                   const SizedBox(height: AppleSpacing.lg),
 
                   // Filter Chips
-                  Row(
+                  Wrap(
+                    spacing: AppleSpacing.xs,
+                    runSpacing: AppleSpacing.xs,
                     children: [
                       _buildFilterChip('All'),
-                      const SizedBox(width: AppleSpacing.xs),
                       _buildFilterChip('Completed'),
-                      const SizedBox(width: AppleSpacing.xs),
                       _buildFilterChip('Incomplete'),
                     ],
                   ),

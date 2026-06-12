@@ -162,19 +162,19 @@ class TaskItem extends StatelessWidget {
                 ),
                 const SizedBox(height: 16),
                 const Text('Difficulty', style: AppleTypography.captionStrong),
-                Row(
+                const SizedBox(height: 8),
+                Wrap(
+                  spacing: 8.0,
+                  runSpacing: 4.0,
                   children: TaskDifficulty.values.map((d) {
-                    return Padding(
-                      padding: const EdgeInsets.only(right: 8.0),
-                      child: ChoiceChip(
-                        label: Text(_getDifficultyText(d)),
-                        selected: selectedDifficulty == d,
-                        onSelected: (selected) {
-                          if (selected) {
-                            setDialogState(() => selectedDifficulty = d);
-                          }
-                        },
-                      ),
+                    return ChoiceChip(
+                      label: Text(_getDifficultyText(d)),
+                      selected: selectedDifficulty == d,
+                      onSelected: (selected) {
+                        if (selected) {
+                          setDialogState(() => selectedDifficulty = d);
+                        }
+                      },
                     );
                   }).toList(),
                 ),
