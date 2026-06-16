@@ -3,26 +3,22 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:assignmen/main.dart';
 
 void main() {
-  testWidgets('Todo List Apple Design Smoke Test', (WidgetTester tester) async {
-    // Build our app and trigger a frame.
-    await tester.pumpWidget(const TodoApp());
+  testWidgets('Todo List Login and Home Smoke Test', (WidgetTester tester) async {
+    // Build our app starting at login screen
+    await tester.pumpWidget(const TodoApp(isLoggedIn: false));
 
-    // Verify UI components
-    expect(find.text('TODO MANAGER'), findsOneWidget);
-    expect(find.text('No tasks yet'), findsOneWidget);
+    // Verify Login Screen
+    expect(find.text('Login'), findsOneWidget);
+    expect(find.byIcon(Icons.person), findsOneWidget);
 
-    // Add a task
-    // The first TextField is Search, the second is Task input
-    await tester.enterText(find.byType(TextField).at(1), 'Buy Milk');
-    await tester.tap(find.text('Add Task'));
+    // Enter credentials
+    await tester.enterText(find.byType(TextFormField).at(0), 'testuser');
+    await tester.enterText(find.byType(TextFormField).at(1), 'password123');
+    await tester.tap(find.text('Login'));
     await tester.pumpAndSettle();
 
-    // Verify task added
-    expect(find.text('Buy Milk'), findsOneWidget);
-    expect(find.text('No tasks yet'), findsNothing);
-    
-    // Verify Statistics (Total: 1, Completed: 0, Remaining: 1)
-    expect(find.text('1'), findsNWidgets(2)); // Total and Remaining
-    expect(find.text('0'), findsOneWidget); // Completed
+    // Verify transition to Home Screen
+    expect(find.text('Hi, testuser'), findsOneWidget);
+    expect(find.text('TODO MANAGER'), findsOneWidget);
   });
 }

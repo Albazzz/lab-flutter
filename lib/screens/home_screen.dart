@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../models/task.dart';
+import '../services/database_helper.dart';
+import '../services/auth_service.dart';
 import '../utils/constants.dart';
 import '../widgets/task_item.dart';
 import '../widgets/task_statistics.dart';
 import '../widgets/empty_state.dart';
+import 'login_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -14,24 +17,45 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  final List<Task> _tasks = [];
+  List<Task> _tasks = [];
   final TextEditingController _taskController = TextEditingController();
   final TextEditingController _searchController = TextEditingController();
   String _filter = 'All';
   String _searchQuery = '';
   DateTime? _selectedDeadline;
   TaskDifficulty _selectedDifficulty = TaskDifficulty.easy;
+  final DatabaseHelper _dbHelper = DatabaseHelper();
+  String? _username;
 
-  void _addTask() {
+  @override
+  void initState() {
+    super.initState();
+    _loadInitialData();
+  }
+
+  void _loadInitialData() async {
+    final tasks = await _dbHelper.getTasks();
+    final username = await AuthService.getUsername();
+    setState(() {
+      _tasks = tasks;
+      _username = username;
+    });
+  }
+
+  void _addTask() async {
     final title = _taskController.text.trim();
     if (title.isNotEmpty) {
+      final newTask = Task(
+        title: title,
+        createdAt: DateTime.now(),
+        deadline: _selectedDeadline,
+        difficulty: _selectedDifficulty,
+      );
+      int id = await _dbHelper.insertTask(newTask);
+      newTask.id = id;
+      
       setState(() {
-        _tasks.insert(0, Task(
-          title: title,
-          createdAt: DateTime.now(),
-          deadline: _selectedDeadline,
-          difficulty: _selectedDifficulty,
-        ));
+        _tasks.insert(0, newTask);
         _taskController.clear();
         _selectedDeadline = null;
         _selectedDifficulty = TaskDifficulty.easy;
@@ -39,13 +63,14 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  void _toggleTask(Task task) {
+  void _toggleTask(Task task) async {
     setState(() {
       task.isCompleted = !task.isCompleted;
     });
+    await _dbHelper.updateTask(task);
   }
 
-  void _deleteTask(int index) {
+  void _deleteTask(Task task) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -57,11 +82,14 @@ class _HomeScreenState extends State<HomeScreen> {
             child: const Text('Cancel'),
           ),
           TextButton(
-            onPressed: () {
-              setState(() {
-                _tasks.removeAt(index);
-              });
-              Navigator.pop(context);
+            onPressed: () async {
+              if (task.id != null) {
+                await _dbHelper.deleteTask(task.id!);
+                setState(() {
+                  _tasks.removeWhere((t) => t.id == task.id);
+                });
+              }
+              if (mounted) Navigator.pop(context);
             },
             child: const Text('Delete', style: TextStyle(color: Colors.red)),
           ),
@@ -70,25 +98,34 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  void _editTask(Task task, String newTitle, DateTime? newDeadline, TaskDifficulty newDifficulty) {
+  void _editTask(Task task, String newTitle, DateTime? newDeadline, TaskDifficulty newDifficulty) async {
     setState(() {
       task.title = newTitle;
       task.deadline = newDeadline;
       task.difficulty = newDifficulty;
     });
+    await _dbHelper.updateTask(task);
+  }
+
+  void _logout() async {
+    await AuthService.logout();
+    if (mounted) {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => const LoginScreen()),
+      );
+    }
   }
 
   List<Task> get _filteredTasks {
     List<Task> filtered = _tasks;
     
-    // Filter by search query
     if (_searchQuery.isNotEmpty) {
       filtered = filtered.where((task) => 
         task.title.toLowerCase().contains(_searchQuery.toLowerCase())
       ).toList();
     }
 
-    // Filter by status
     if (_filter == 'Completed') {
       return filtered.where((task) => task.isCompleted).toList();
     } else if (_filter == 'Incomplete') {
@@ -103,11 +140,22 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppleColors.canvasParchment,
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        title: Text('Hi, ${_username ?? "User"}', style: AppleTypography.bodyStrong),
+        actions: [
+          IconButton(
+            onPressed: _logout,
+            icon: const Icon(Icons.logout, color: AppleColors.primary),
+          ),
+        ],
+      ),
       body: SafeArea(
         child: CustomScrollView(
           slivers: [
             SliverPadding(
-              padding: const EdgeInsets.all(AppleSpacing.lg),
+              padding: const EdgeInsets.symmetric(horizontal: AppleSpacing.lg),
               sliver: SliverList(
                 delegate: SliverChildListDelegate([
                   const Text('TODO MANAGER', style: AppleTypography.displayLg),
@@ -309,7 +357,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           return TaskItem(
                             task: task,
                             onToggle: () => _toggleTask(task),
-                            onDelete: () => _deleteTask(_tasks.indexOf(task)),
+                            onDelete: () => _deleteTask(task),
                             onEdit: (newTitle, newDeadline, newDifficulty) => 
                                 _editTask(task, newTitle, newDeadline, newDifficulty),
                           );
