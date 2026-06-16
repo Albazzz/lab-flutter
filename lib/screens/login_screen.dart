@@ -120,40 +120,6 @@ class _LoginScreenState extends State<LoginScreen> {
                             isPassword: true,
                           ),
                           const SizedBox(height: 15),
-                          // Remember me and Forgot password
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Row(
-                                children: [
-                                  SizedBox(
-                                    height: 24,
-                                    width: 24,
-                                    child: Checkbox(
-                                      value: _rememberMe,
-                                      onChanged: (val) => setState(() => _rememberMe = val!),
-                                      side: const BorderSide(color: Colors.white),
-                                      checkColor: Colors.indigo,
-                                      activeColor: Colors.white,
-                                    ),
-                                  ),
-                                  const SizedBox(width: 8),
-                                  const Text(
-                                    'Remember me',
-                                    style: TextStyle(color: Colors.white, fontSize: 13),
-                                  ),
-                                ],
-                              ),
-                              TextButton(
-                                onPressed: () {},
-                                child: const Text(
-                                  'Forgot password?',
-                                  style: TextStyle(color: Colors.white, fontSize: 13),
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 30),
                           // Login Button
                           SizedBox(
                             width: double.infinity,
@@ -178,28 +144,6 @@ class _LoginScreenState extends State<LoginScreen> {
                                     ),
                                   ),
                             ),
-                          ),
-                          const SizedBox(height: 25),
-                          // Register link
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              const Text(
-                                "Don't have an account? ",
-                                style: TextStyle(color: Colors.white70, fontSize: 14),
-                              ),
-                              GestureDetector(
-                                onTap: () {},
-                                child: const Text(
-                                  "Register",
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 14,
-                                  ),
-                                ),
-                              ),
-                            ],
                           ),
                         ],
                       ),
