@@ -34,18 +34,21 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _loadInitialData() async {
-    final tasks = await _dbHelper.getTasks();
     final username = await AuthService.getUsername();
-    setState(() {
-      _tasks = tasks;
-      _username = username;
-    });
+    if (username != null) {
+      final tasks = await _dbHelper.getTasks(username);
+      setState(() {
+        _tasks = tasks;
+        _username = username;
+      });
+    }
   }
 
   void _addTask() async {
     final title = _taskController.text.trim();
-    if (title.isNotEmpty) {
+    if (title.isNotEmpty && _username != null) {
       final newTask = Task(
+        userId: _username, // Assign the current username as userId
         title: title,
         createdAt: DateTime.now(),
         deadline: _selectedDeadline,

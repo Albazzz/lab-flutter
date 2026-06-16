@@ -20,8 +20,9 @@ class DatabaseHelper {
     String path = join(await getDatabasesPath(), 'todo_manager.db');
     return await openDatabase(
       path,
-      version: 1,
+      version: 2, // Upgrade version to handle schema change
       onCreate: _onCreate,
+      onUpgrade: _onUpgrade,
     );
   }
 
@@ -29,6 +30,7 @@ class DatabaseHelper {
     await db.execute('''
       CREATE TABLE tasks(
         id INTEGER PRIMARY KEY AUTOINCREMENT,
+        userId TEXT,
         title TEXT,
         isCompleted INTEGER,
         createdAt TEXT,
@@ -38,14 +40,26 @@ class DatabaseHelper {
     ''');
   }
 
+  Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
+    if (oldVersion < 2) {
+      await db.execute('ALTER TABLE tasks ADD COLUMN userId TEXT');
+    }
+  }
+
   Future<int> insertTask(Task task) async {
     Database db = await database;
     return await db.insert('tasks', task.toMap());
   }
 
-  Future<List<Task>> getTasks() async {
+  Future<List<Task>> getTasks(String userId) async {
     Database db = await database;
-    final List<Map<String, dynamic>> maps = await db.query('tasks', orderBy: 'id DESC');
+    // Filter tasks by the logged-in userId
+    final List<Map<String, dynamic>> maps = await db.query(
+      'tasks',
+      where: 'userId = ?',
+      whereArgs: [userId],
+      orderBy: 'id DESC',
+    );
     return List.generate(maps.length, (i) {
       return Task.fromMap(maps[i]);
     });

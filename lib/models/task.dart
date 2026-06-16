@@ -2,6 +2,7 @@ enum TaskDifficulty { easy, medium, hard }
 
 class Task {
   int? id;
+  String? userId; // Add userId to associate task with a specific account
   String title;
   bool isCompleted;
   DateTime createdAt;
@@ -10,6 +11,7 @@ class Task {
 
   Task({
     this.id,
+    this.userId,
     required this.title,
     this.isCompleted = false,
     required this.createdAt,
@@ -20,6 +22,7 @@ class Task {
   Map<String, dynamic> toMap() {
     return {
       'id': id,
+      'userId': userId,
       'title': title,
       'isCompleted': isCompleted ? 1 : 0,
       'createdAt': createdAt.toIso8601String(),
@@ -31,6 +34,7 @@ class Task {
   factory Task.fromMap(Map<String, dynamic> map) {
     return Task(
       id: map['id'],
+      userId: map['userId'],
       title: map['title'],
       isCompleted: map['isCompleted'] == 1,
       createdAt: DateTime.parse(map['createdAt']),
